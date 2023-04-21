@@ -14,7 +14,11 @@ References:
     * https://guigui.developpez.com/cours/python/vpython/en/?page=workobject
     * https://openstax.org/books/calculus-volume-3/pages/2-7-cylindrical-and-spherical-coordinates
     * https://www.nasa.gov/sites/default/files/files/Distance_to_the_Moon.pdf
-    * 
+    * https://nssdc.gsfc.nasa.gov/planetary/factsheet/satringfact.html
+    * https://www.science.org/doi/10.1126/science.aat2965
+    * https://spacemath.gsfc.nasa.gov/weekly/10Page28.pdf
+    * https://www.wionews.com/science/an-astronomer-has-created-video-on-saturns-spinning-rings-375558
+    * https://solarsystem.nasa.gov/planets/saturn/in-depth/#:~:text=Saturn's%20ring%20system%20extends%20up,meters)%20in%20the%20main%20rings.
 '''
 
 try:
@@ -22,6 +26,7 @@ try:
     from vpython import *
     from sun import Star
     from planet import Planet
+    from rings import PlanetRing
     #from satellite import Satellite
     from moon import Moon
 
@@ -81,11 +86,29 @@ if __name__ == '__main__':
     trail_flag = False
 
     # SCENE:
+    #scene.visible = False # Show nothing until all assets are loaded
+
     scene = canvas(width=1200, height=700)
-    scene.title = int(0.1 * scene.width) * ' ' + 'Solar System\n',
+    scene.title = int(0.1 * scene.width) * ' ' + 'Asteroid Mitigation using Lasers\n',
     scene.ambient = color.gray(0.7)
     scene.autoscale = False
     scene.lights = []
+        
+    # Using deep space image: https://svs.gsfc.nasa.gov/4851
+    # Converted to cubemap using: https://jaxry.github.io/panorama-to-cubemap/
+    # Define the six images of the space cubemap
+    '''
+    textures = {  
+        "posx": "px.png",
+        "negx": "nx.png",
+        "posy": "py.png",
+        "negy": "ny.png",
+        "posz": "pz.png",
+        "negz": "nz.png"
+    }
+    '''
+
+    #scene.background = 'Cubemap/px.png'
 
     # SOLAR SYSTEM OBJECTS:
     # Units are in km
@@ -184,6 +207,19 @@ if __name__ == '__main__':
                     DISTANCE_SCALE,
                     time_scale, 
                     REFRESH_RATE)
+    
+    # https://nssdc.gsfc.nasa.gov/planetary/factsheet/satringfact.html
+    # https://www.science.org/doi/10.1126/science.aat2965
+    # https://spacemath.gsfc.nasa.gov/weekly/10Page28.pdf
+    # https://www.wionews.com/science/an-astronomer-has-created-video-on-saturns-spinning-rings-375558
+    # https://solarsystem.nasa.gov/planets/saturn/in-depth/#:~:text=Saturn's%20ring%20system%20extends%20up,meters)%20in%20the%20main%20rings.
+    saturn_ring = PlanetRing(160000,
+                    136780,
+                    saturn,
+                    1,
+                    1.54 * 10**19,
+                    PLANET_SCALE,
+                    color=vector(.43, .4, .3451)) # RGB values as percentage R, G, and B
     uranus = Planet(51118, 
                     2877000000, 
                     -17.2, 
@@ -216,9 +252,14 @@ if __name__ == '__main__':
                     'moon': moon, 
                     'mars': mars,
                     'jupiter': jupiter, 
-                    'saturn': saturn, 
+                    'saturn': saturn,
+                    'saturn_ring': saturn_ring, 
                     'uranus': uranus, 
                     'neptune': neptune}
+
+    # Show scene now that assets are loaded
+    #scene.waitfor('textures')
+    #scene.visible = True
 
     button(text='<b>START</b>', pos=scene.title_anchor, bind=start_flag_button)
     scene.caption = ''
@@ -234,9 +275,11 @@ if __name__ == '__main__':
     while True:
         rate(REFRESH_RATE)
         for obj in list(solar_system.values()):
-            obj.update(time_scale)
+            if type(obj) != PlanetRing:
+                obj.update(time_scale)
             if start_flag:
-                obj.rotate_axis()
+                if type(obj) != PlanetRing:
+                    obj.rotate_axis()
                 if type(obj) == Planet:
                     if trail_flag:
                         obj.trail(0)
